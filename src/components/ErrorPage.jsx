@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouteError, useLocation, Link } from "react-router-dom";
 import errorimg from "../assets/404-error.jpg";
-import notFound from "../assets/democertificate.png";
+import notFound from "../assets/democertificate.PNG";
 
 const ErrorPage = () => {
   const err = useRouteError();
