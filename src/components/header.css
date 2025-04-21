@@ -1,0 +1,60 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0rem 4rem;
+  position: relative;
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #363b98;
+}
+
+.navbar {
+  display: flex;
+  gap: 2rem;
+}
+
+a {
+  text-decoration: none;
+  color: #363b98;
+  font-weight: 700;
+}
+
+/* HAMBURGER STYLES */
+.hamburger {
+  display: none;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 768px) {
+  .header {
+    padding: 0rem 2rem;
+  }
+
+  .navbar {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #b3b6ed;
+    width: 40%;
+    padding: 1rem;
+    gap: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+  }
+
+  .navbar.open {
+    display: flex;
+  }
+
+  .hamburger {
+    display: block;
+  }
+}

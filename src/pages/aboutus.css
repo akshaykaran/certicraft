@@ -1,0 +1,40 @@
+.about {
+  background: linear-gradient(to right, #7744fa, #82b1e7);
+  width: 100vw;
+  height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.about-section {
+  margin-top: 1rem;
+  width: 60%;
+  height: 100%;
+  color: #fff;
+  text-align: justify;
+  line-height: 30px;
+}
+
+.about-section h1 {
+  font-size: 50px;
+  color: #000562;
+}
+
+.about-section h3 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.about-section button {
+  background-color: #363b98;
+}
+
+@media screen and (max-width: 768px) {
+  .about-section {
+    width: 90%;
+    text-align: start;
+    line-height: 24px;
+  }
+}
