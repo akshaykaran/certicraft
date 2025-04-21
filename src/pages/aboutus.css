@@ -32,9 +32,19 @@
 }
 
 @media screen and (max-width: 768px) {
+  .about {
+    height: auto;
+    overflow: visible;
+    flex-direction: column;
+  }
+
   .about-section {
     width: 90%;
     text-align: start;
     line-height: 24px;
+  }
+
+  .about-section h1 {
+    line-height: 45px;
   }
 }

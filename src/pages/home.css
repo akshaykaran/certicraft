@@ -49,6 +49,12 @@
 }
 
 @media screen and (max-width: 768px) {
+  .home {
+    height: auto;
+    overflow: visible;
+    flex-direction: column;
+  }
+
   .left-home-section {
     width: 100%;
   }
