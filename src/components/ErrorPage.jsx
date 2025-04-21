@@ -10,10 +10,6 @@ const ErrorPage = () => {
 
   const CertificatePage = location.pathname === "/design-certificate";
 
-  // const errorText = CertificatePage
-  // ? "Add a course to design your certificate."
-  //   : "Oops!! CertiCraft page you are looking for is missing";
-
   const errorImage = CertificatePage ? notFound : errorimg;
 
   return (

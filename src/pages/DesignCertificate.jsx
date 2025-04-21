@@ -1,125 +1,257 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Typography, Button, Paper, Grid } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useCourseContext } from "../utils/CourseContext";
-import { Document, Page, pdfjs } from "react-pdf";
-import { Box, Typography, Input } from "@mui/material";
+import QRCode from "qrcode";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { saveAs } from "file-saver";
 import Draggable from "react-draggable";
-import QRCode from "react-qr-code";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
+import workerURL from "../utils/pdfWorker";
 
-const overlayFields = [
-  "candidateName",
-  "courseName",
-  "courseId",
-  "tenure",
-  "description",
-  "qrCode",
-];
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerURL;
 
 const DesignCertificate = () => {
   const { courseId } = useParams();
   const { courses } = useCourseContext();
-  const course = courses.find((c) => c.courseId === courseId);
-
-  const [pdfData, setPdfData] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [qrDataUrl, setQrDataUrl] = useState(null);
   const [positions, setPositions] = useState({});
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [backgroundImage, setBackgroundImage] = useState("");
 
-  useEffect(() => {
-    const savedPdf = localStorage.getItem(`template_pdf_${courseId}`);
-    if (savedPdf) setPdfData(savedPdf);
-
-    const savedPositions =
-      JSON.parse(localStorage.getItem(`field_positions_${courseId}`)) || {};
-    setPositions(savedPositions);
-  }, [courseId]);
-
-  const handleUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === "application/pdf") {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result;
-        localStorage.setItem(`template_pdf_${courseId}`, base64);
-        setPdfData(base64);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      alert("Please upload a valid PDF file.");
-    }
+  const refs = {
+    candidateName: useRef(null),
+    courseName: useRef(null),
+    courseId: useRef(null),
+    tenure: useRef(null),
+    description: useRef(null),
+    qrCode: useRef(null),
   };
 
-  const handleStop = (e, data, field) => {
+  useEffect(() => {
+    const found = courses.find((c) => c.courseId === courseId);
+    setSelectedCourse(found || null);
+  }, [courseId, courses]);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      QRCode.toDataURL(JSON.stringify(selectedCourse))
+        .then((url) => setQrDataUrl(url))
+        .catch((err) => console.error("QR generation failed:", err));
+    }
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`positions_${courseId}`);
+    if (saved) setPositions(JSON.parse(saved));
+  }, [courseId]);
+
+  const handlePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== "application/pdf") {
+      alert("Please upload a valid PDF file.");
+      return;
+    }
+    setPdfFile(file);
+
+    const fileReader = new FileReader();
+    fileReader.onload = async function () {
+      const typedArray = new Uint8Array(this.result);
+      const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      const imageUrl = canvas.toDataURL();
+      setBackgroundImage(imageUrl);
+      setCanvasSize({ width: canvas.width, height: canvas.height });
+    };
+
+    fileReader.readAsArrayBuffer(file);
+  };
+
+  const handleDragStop = (field, e, data) => {
     const updated = {
       ...positions,
       [field]: { x: data.x, y: data.y },
     };
     setPositions(updated);
-    localStorage.setItem(
-      `field_positions_${courseId}`,
-      JSON.stringify(updated)
-    );
+    localStorage.setItem(`positions_${courseId}`, JSON.stringify(updated));
   };
 
-  if (!course) return <Typography>Course not found</Typography>;
+  const handleGenerateCertificate = async () => {
+    if (!pdfFile || !selectedCourse || !qrDataUrl) return;
+
+    const existingPdfBytes = await pdfFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const page = pdfDoc.getPages()[0];
+    const { height } = page.getSize();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const scaleBack = 1 / 1.5;
+
+    const getY = (y) => height - y;
+
+    const drawField = (text, key, size = 14) => {
+      const pos = positions[key];
+      if (pos && text) {
+        page.drawText(text, {
+          x: pos.x * scaleBack,
+          y: getY(pos.y * scaleBack),
+          size,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      }
+    };
+
+    drawField(selectedCourse.candidateName, "candidateName", 18);
+    drawField(selectedCourse.courseName, "courseName", 14);
+    drawField(selectedCourse.courseId, "courseId", 12);
+    drawField(
+      `${selectedCourse.startDate} to ${selectedCourse.endDate}`,
+      "tenure",
+      12
+    );
+    drawField(selectedCourse.description, "description", 12);
+
+    const qrImageBytes = await fetch(qrDataUrl).then((res) =>
+      res.arrayBuffer()
+    );
+    const qrImage = await pdfDoc.embedPng(qrImageBytes);
+    const qrDims = qrImage.scale(0.25);
+    const qrPos = positions["qrCode"];
+
+    if (qrPos) {
+      page.drawImage(qrImage, {
+        x: qrPos.x * scaleBack,
+        y: getY(qrPos.y * scaleBack) - qrDims.height,
+        width: qrDims.width,
+        height: qrDims.height,
+      });
+    }
+
+    const finalPdf = await pdfDoc.save();
+    const blob = new Blob([finalPdf], { type: "application/pdf" });
+    saveAs(blob, `Certificate_${selectedCourse.candidateName}.pdf`);
+  };
+
+  const fieldComponents = [
+    {
+      key: "candidateName",
+      label: selectedCourse?.candidateName || "Candidate Name",
+    },
+    { key: "courseName", label: selectedCourse?.courseName || "Course Name" },
+    { key: "courseId", label: selectedCourse?.courseId || "Course ID" },
+    {
+      key: "tenure",
+      label: selectedCourse
+        ? `${selectedCourse.startDate} to ${selectedCourse.endDate}`
+        : "Tenure",
+    },
+    { key: "description", label: selectedCourse?.description || "Description" },
+    {
+      key: "qrCode",
+      label: qrDataUrl ? <img src={qrDataUrl} alt="QR" width={80} /> : "QR",
+    },
+  ];
+
+  if (!selectedCourse) {
+    return (
+      <Box p={4}>
+        <Typography>No course found. Please check the Course ID.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box p={4}>
-      <Typography variant="h5" mb={2}>
-        Designing Certificate for <strong>{course.candidateName}</strong>
+      <Typography variant="h4" gutterBottom>
+        Design Certificate
       </Typography>
 
-      <Box mb={2}>
-        <Input type="file" onChange={handleUpload} accept="application/pdf" />
-      </Box>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={5}>
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Upload Certificate Template (PDF)
+            </Typography>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handlePDFUpload}
+            />
+            <Typography fontSize={14} mt={2}>
+              Drag fields over the preview on the right.
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{ mt: 3 }}
+              disabled={!pdfFile}
+              onClick={handleGenerateCertificate}
+            >
+              Download Final Certificate
+            </Button>
+          </Paper>
+        </Grid>
 
-      {/* PDF with overlays */}
-      <Box
-        sx={{
-          position: "relative",
-          width: "fit-content",
-          border: "1px solid #ccc",
-        }}
-      >
-        {pdfData && (
-          <>
-            <Document file={pdfData}>
-              <Page pageNumber={1} width={800} />
-            </Document>
-
-            {/* Draggable overlays */}
-            {overlayFields.map((field) => (
+        <Grid item xs={12} md={7}>
+          <Typography variant="h6">Live Certificate Preview</Typography>
+          <Box
+            sx={{
+              mt: 2,
+              position: "relative",
+              width: `${canvasSize.width}px`,
+              height: `${canvasSize.height}px`,
+              backgroundColor: "#fff",
+              border: "1px solid #ccc",
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              overflow: "hidden",
+            }}
+          >
+            {fieldComponents.map((field) => (
               <Draggable
-                key={field}
-                position={positions[field] || { x: 50, y: 50 }}
-                onStop={(e, data) => handleStop(e, data, field)}
+                key={field.key}
+                nodeRef={refs[field.key]}
+                bounds="parent"
+                defaultPosition={positions[field.key] || { x: 50, y: 50 }}
+                onStop={(e, data) => handleDragStop(field.key, e, data)}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    padding: "5px 10px",
-                    backgroundColor: "#ffffffaa",
+                <Box
+                  ref={refs[field.key]}
+                  sx={{
+                    padding: "4px 8px",
+                    backgroundColor:
+                      field.key === "qrCode"
+                        ? "transparent"
+                        : "rgba(255,255,255,0.9)",
                     border: "1px dashed #555",
-                    borderRadius: "5px",
+                    borderRadius: 1,
                     cursor: "move",
-                    fontWeight: "bold",
-                    fontSize: "14px",
+                    fontSize: 14,
+                    display: "inline-block",
+                    position: "absolute",
+                    zIndex: 10,
                   }}
                 >
-                  {field === "qrCode" ? (
-                    <QRCode value={course.courseId} size={64} />
-                  ) : (
-                    field
-                      .replace("Name", " Name")
-                      .replace("Id", " ID")
-                      .replace(/([a-z])([A-Z])/g, "$1 $2")
-                  )}
-                </div>
+                  {field.label}
+                </Box>
               </Draggable>
             ))}
-          </>
-        )}
-      </Box>
+          </Box>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

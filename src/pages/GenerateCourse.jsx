@@ -28,18 +28,8 @@ const GenerateCourse = () => {
     description: "",
   });
 
-  //   const [courses, setCourses] = useState([]);
   const { courses, setCourses } = useCourseContext();
   const [editIndex, setEditIndex] = useState(null);
-
-  //   useEffect(() => {
-  //     const storedCourses = JSON.parse(localStorage.getItem(LOCAL_KEY)) || [];
-  //     setCourses(storedCourses);
-  //   }, []);
-
-  //   useEffect(() => {
-  //     localStorage.setItem(LOCAL_KEY, JSON.stringify(courses));
-  //   }, [courses]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -130,6 +120,7 @@ const GenerateCourse = () => {
         <TextField
           label="Course ID"
           name="courseId"
+          type="number"
           value={formData.courseId}
           onChange={handleChange}
         />

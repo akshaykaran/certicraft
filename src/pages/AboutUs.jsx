@@ -39,7 +39,7 @@ const AboutUs = () => {
             <Button
               variant="contained"
               size="large"
-              onClick={() => navigate("/generate-certificate")}
+              onClick={() => navigate("/generate-course")}
             >
               Generate Certificates
             </Button>

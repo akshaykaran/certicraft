@@ -9,5 +9,5 @@ createRoot(document.getElementById("root")).render(
   <CourseProvider>
     <App />
   </CourseProvider>
-  // {/* </StrictMode> */}ds
+  // </StrictMode>
 );
