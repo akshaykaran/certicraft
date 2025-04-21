@@ -34,11 +34,11 @@ const Header = () => {
         <Link to="/about" onClick={() => setMenuOpen(false)}>
           About Us
         </Link>
-        <Link to="/view-certificate" onClick={() => setMenuOpen(false)}>
-          View Certificate
+        <Link to="/generate-course" onClick={() => setMenuOpen(false)}>
+          Generate Course
         </Link>
-        <Link to="/generate-certificate" onClick={() => setMenuOpen(false)}>
-          Generate Certificate
+        <Link to="/design-certificate" onClick={() => setMenuOpen(false)}>
+          Design Certificate
         </Link>
       </nav>
     </div>

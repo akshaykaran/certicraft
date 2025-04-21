@@ -29,6 +29,10 @@
   font-weight: 400;
 }
 
+.details p {
+  line-height: 30px;
+}
+
 .details button {
   background-color: #363b98;
 }

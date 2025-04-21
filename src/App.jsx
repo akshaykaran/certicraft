@@ -3,49 +3,45 @@ import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
-import GenerateCertificate from "./pages/GenerateCertificate";
-import ViewCertificate from "./pages/ViewCertificate";
+import GenerateCourse from "./pages/GenerateCourse";
+import DesignCertificate from "./pages/DesignCertificate";
 
 import Header from "./components/Header";
 import ErrorPage from "./components/ErrorPage";
 
-
-
-const AppRoute =()=>(
-<>
-  <Header />
-  <Outlet/>
+const AppRoute = () => (
+  <>
+    <Header />
+    <Outlet />
   </>
-
-)
-  
+);
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <AppRoute/>,
+    element: <AppRoute />,
     children: [
       {
-        index: true, element: <Home/>
-      }, 
-      {
-        path:"about", element: <AboutUs/>
+        index: true,
+        element: <Home />,
       },
       {
-        path:"view-certificate", element: <ViewCertificate/>
-      }, 
+        path: "about",
+        element: <AboutUs />,
+      },
       {
-        path:"generate-certificate", element:<GenerateCertificate/>
-      }
+        path: "generate-course",
+        element: <GenerateCourse />,
+      },
+      {
+        path: "design-certificate/:courseId",
+        element: <DesignCertificate />,
+      },
     ],
     errorElement: <ErrorPage />,
   },
-])
+]);
 
-export default function App(){
-  return <RouterProvider router={router}/>
+export default function App() {
+  return <RouterProvider router={router} />;
 }
-
-
-
-

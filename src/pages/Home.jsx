@@ -11,7 +11,7 @@ const Home = () => {
     <div className="home">
       <div className="left-home-section">
         <div className="details">
-          <h3>Generate Certificates</h3>
+          <h3>Create Courses & Design Certificates</h3>
           <h1>Certicraft</h1>
           <p>
             CertiCraft is a seamless platform for creating, customizing, and
@@ -25,20 +25,20 @@ const Home = () => {
             <Button
               variant="contained"
               size="large"
-              onClick={() => navigate("/generate-certificate")}
+              onClick={() => navigate("/generate-course")}
             >
-              Generate Certificates
+              Generate Course
             </Button>
             <Button
               variant="contained"
               size="large"
-              onClick={() => navigate("/view-certificate")}
+              onClick={() => navigate("/design-certificate")}
               style={{
                 backgroundColor: "white",
                 color: "black",
               }}
             >
-              View Certificates
+              Design Certificates
             </Button>
           </Stack>
         </div>
