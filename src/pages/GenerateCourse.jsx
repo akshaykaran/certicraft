@@ -120,7 +120,7 @@ const GenerateCourse = () => {
         <TextField
           label="Course ID"
           name="courseId"
-          type="number"
+          // type="number"
           value={formData.courseId}
           onChange={handleChange}
         />
